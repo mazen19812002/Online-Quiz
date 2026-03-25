@@ -139,8 +139,7 @@
 
         .card-title {
             font-weight: 300;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            /* Removed uppercase text-transform so it displays in natural sentence case */
             margin: 0 0 8px 0;
             font-size: 1.05em;
             color: var(--text-main);
@@ -189,6 +188,38 @@
             background-color: var(--wrong-color) !important;
             color: white !important;
             border-color: var(--wrong-color) !important;
+        }
+
+        /* Feedback Classes */
+        .feedback {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            display: none;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct-feedback {
+            background-color: #dcfce7;
+            border: 1px solid var(--correct-color);
+            color: #14532d;
+        }
+
+        .feedback.wrong-feedback {
+            background-color: #fee2e2;
+            border: 1px solid var(--wrong-color);
+            color: #7f1d1d;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Footer */
@@ -1737,6 +1768,9 @@
     - wireless
 `;
 
+        // Store selected questions globally for the feedback logic
+        let currentQuizData = [];
+
         // Parser and Initializer
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -1762,6 +1796,31 @@
                     if (currentQ && currentQ.options.length > 0) allQuestions.push(currentQ);
                     
                     let qText = trimmed.replace(/^\d+\.\s*\**/, '').replace(/\**$/, '').trim();
+                    
+                    // --- PUNCTUATION FIXES FOR THE QUESTION STEM ---
+                    // 1. Capitalize first letter
+                    qText = qText.charAt(0).toUpperCase() + qText.slice(1);
+                    
+                    // 2. Standardize fill-in-the-blank lines
+                    qText = qText.replace(/_{2,}/g, '_______');
+                    
+                    // 3. Convert single quotes surrounding phrases to double quotes
+                    qText = qText.replace(/'([^']+)'/g, '"$1"');
+                    
+                    // 4. Remove accidental spaces before punctuation
+                    qText = qText.replace(/\s+([.?:!])/g, '$1');
+                    
+                    // 5. Enforce proper terminal punctuation if missing
+                    if (!/[.?:\-!"')]$/.test(qText) && !qText.endsWith('_______')) {
+                        const firstWord = qText.split(' ')[0].toLowerCase();
+                        const qWords = ['what', 'why', 'who', 'where', 'when', 'how', 'which', 'is', 'are', 'do', 'does', 'did', 'can', 'could', 'will', 'would', 'should', 'select', 'identify'];
+                        if (qWords.includes(firstWord)) {
+                            qText += '?';
+                        } else {
+                            qText += ':';
+                        }
+                    }
+
                     currentQ = {
                         category: currentSection,
                         question: qText,
@@ -1780,19 +1839,19 @@
             shuffleArray(allQuestions);
             
             // 2. Select exactly 40 questions without duplication
-            const selectedQuestions = allQuestions.slice(0, 40);
+            currentQuizData = allQuestions.slice(0, 40);
 
-            selectedQuestions.forEach((item, index) => {
+            currentQuizData.forEach((item, index) => {
                 item.id = index;
                 
                 // The first option in the raw data is always the correct one
-                const correctText = item.options[0];
+                item.correctTextRaw = item.options[0]; 
                 
                 // 3. Shuffle options for this specific question
                 shuffleArray(item.options);
                 
                 // Find new index of the correct answer after shuffling
-                item.correctIndex = item.options.indexOf(correctText);
+                item.correctIndex = item.options.indexOf(item.correctTextRaw);
                 
                 // Assign standard Letters A, B, C, D to the shuffled choices
                 item.optionsWithLetters = item.options.map((opt, i) => {
@@ -1804,7 +1863,7 @@
             const main = document.getElementById('quiz-main');
             let html = '<h2 class="section-title">40-Question Random Challenge</h2>';
 
-            selectedQuestions.forEach(item => {
+            currentQuizData.forEach(item => {
                 html += `
                     <div class="card" id="q-${item.id}">
                         <div style="font-size: 0.7em; font-weight: bold; color: var(--primary-dark); text-transform: uppercase; margin-bottom: 6px; opacity: 0.8;">
@@ -1813,11 +1872,12 @@
                         <h3 class="card-title">${item.id + 1}. ${item.question}</h3>
                         <div class="options-container">
                             ${item.optionsWithLetters.map((opt, oIdx) => `
-                                <button class="option-btn" onclick="checkAnswer(${item.id}, ${oIdx}, this, ${item.correctIndex})">
+                                <button class="option-btn" onclick="checkAnswer(${item.id}, ${oIdx})">
                                     ${opt}
                                 </button>
                             `).join('')}
                         </div>
+                        <div class="feedback" id="feedback-${item.id}"></div>
                     </div>
                 `;
             });
@@ -1825,18 +1885,47 @@
         }
 
         // Action Logic
-        function checkAnswer(qId, selectedIdx, btn, correctIdx) {
+        function checkAnswer(qId, selectedIdx) {
+            const item = currentQuizData.find(q => q.id === qId);
             const card = document.getElementById(`q-${qId}`);
             const buttons = card.querySelectorAll('.option-btn');
+            const feedbackDiv = document.getElementById(`feedback-${qId}`);
+
+            const isCorrect = (selectedIdx === item.correctIndex);
 
             buttons.forEach((b, i) => {
                 b.disabled = true; // Disable all attempts (Single Attempt Rule)
-                if (i === correctIdx) {
+                if (i === item.correctIndex) {
                     b.classList.add('correct');
                 } else if (i === selectedIdx) {
                     b.classList.add('wrong');
                 }
             });
+
+            // Generate contextual feedback based on category
+            let explanation = "";
+            const cat = item.category.toLowerCase();
+            const correctStr = `<em>${item.correctTextRaw}</em>`;
+            
+            if (cat.includes("basic concepts") || cat.includes("technical writing")) {
+                explanation = `<strong>Explanation:</strong> In technical reporting and writing, ${correctStr} is the standard professional practice.`;
+            } else if (cat.includes("punctuation")) {
+                explanation = `<strong>Explanation:</strong> The rule applied here is ${correctStr} to ensure maximum clarity and proper sentence structure.`;
+            } else if (cat.includes("tenses")) {
+                explanation = `<strong>Explanation:</strong> The context dictates the use of ${correctStr} based on when the action occurs.`;
+            } else if (cat.includes("articles")) {
+                explanation = `<strong>Explanation:</strong> The correct article usage is ${correctStr}, following the grammatical rules for specific/general nouns and phonetic sounds.`;
+            } else if (cat.includes("parts of speech")) {
+                explanation = `<strong>Explanation:</strong> In this specific sentence structure, the capitalized word functions as ${correctStr}.`;
+            } else if (cat.includes("word formation")) {
+                explanation = `<strong>Explanation:</strong> The most accurate technical terminology for this condition or process is ${correctStr}.`;
+            } else {
+                explanation = `<strong>Explanation:</strong> The correct answer is ${correctStr}.`;
+            }
+
+            // Display the feedback
+            feedbackDiv.innerHTML = (isCorrect ? "<strong>✅ Correct!</strong><br>" : "<strong>❌ Incorrect.</strong><br>") + explanation;
+            feedbackDiv.className = "feedback show " + (isCorrect ? "correct-feedback" : "wrong-feedback");
         }
 
         // Initialize on load
