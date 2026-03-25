@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar Quiz</title>
+    <style>
+        :root {
+            --bg-color: #e0f2fe;
+            --card-bg: #ffffff;
+            --text-main: #000000;
+            --primary-dark: #1e3a8a;
+            --correct-color: #16a34a;
+            --wrong-color: #dc2626;
+            --hover-bg: #f0f8ff;
+            --border-color: #cccccc;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 70px 10px 50px 10px; /* Space for header and footer */
+            line-height: 1.3;
+        }
+
+        /* Hideable Header Interface */
+        #top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: var(--primary-dark);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        #top-bar.hidden {
+            transform: translateY(-100%);
+        }
+
+        .tab-title {
+            font-size: 22px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 2px solid white;
+            padding-bottom: 2px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .ctrl-btn {
+            background-color: white;
+            color: var(--primary-dark);
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .ctrl-btn:hover {
+            transform: scale(1.05);
+            background-color: #e0e0e0;
+        }
+
+        /* Toggle Button - always visible */
+        #toggle-btn {
+            position: fixed;
+            top: 12px;
+            right: 20px;
+            z-index: 1001;
+            background-color: var(--wrong-color);
+            color: white;
+        }
+
+        #top-bar.hidden ~ #toggle-btn {
+            background-color: var(--primary-dark);
+            top: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Main Quiz Container */
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            font-size: 20px; /* Base Zoom */
+            transition: font-size 0.2s ease;
+        }
+
+        .section-title {
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-align: center;
+            margin: 20px 0 10px 0;
+            color: var(--primary-dark);
+            border-bottom: 1px solid var(--primary-dark);
+            padding-bottom: 5px;
+        }
+
+        /* Extremely Compact Question Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.015);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary-dark);
+            z-index: 10;
+            position: relative;
+        }
+
+        .card-title {
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0 0 8px 0;
+            font-size: 1.05em;
+            color: var(--text-main);
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .option-btn {
+            width: 100%;
+            text-align: left;
+            padding: 6px 10px;
+            font-size: 0.95em;
+            font-family: inherit;
+            background-color: #f8f9fa;
+            color: var(--text-main);
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            line-height: 1.2;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: var(--hover-bg);
+            border-color: var(--primary-dark);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            color: #444;
+        }
+
+        /* Feedback Classes */
+        .option-btn.correct {
+            background-color: var(--correct-color) !important;
+            color: white !important;
+            border-color: var(--correct-color) !important;
+            font-weight: bold;
+        }
+
+        .option-btn.wrong {
+            background-color: var(--wrong-color) !important;
+            color: white !important;
+            border-color: var(--wrong-color) !important;
+        }
+
+        /* Footer */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--primary-dark);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 600px) {
+            .tab-title { font-size: 18px; }
+            .ctrl-btn { padding: 4px 8px; font-size: 14px; }
+            #toggle-btn { right: 10px; }
+            main { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Interface -->
+    <div id="top-bar">
+        <div class="tab-title">GRAMMAR QUIZ</div>
+        <div class="controls" style="margin-right: 110px;">
+            <button class="ctrl-btn" onclick="zoom(1)">Zoom +</button>
+            <button class="ctrl-btn" onclick="zoom(-1)">Zoom -</button>
+        </div>
+    </div>
+    <button class="ctrl-btn" id="toggle-btn" onclick="toggleHeader()">Hide Controls</button>
+
+    <!-- Main Content -->
+    <main id="quiz-main">
+        <!-- Questions injected via JS -->
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        All rights are reserved to Dr. Mazen Badawy – Doctorate of English Teaching & Testing
+    </footer>
+
+    <script>
+        // Zoom Logic
+        let currentZoom = 20;
+        function zoom(step) {
+            currentZoom += (step * 2);
+            if (currentZoom < 14) currentZoom = 14;
+            if (currentZoom > 40) currentZoom = 40;
+            document.getElementById('quiz-main').style.fontSize = currentZoom + 'px';
+        }
+
+        // Header Toggle Logic
+        let headerVisible = true;
+        function toggleHeader() {
+            const topBar = document.getElementById('top-bar');
+            const btn = document.getElementById('toggle-btn');
+            headerVisible = !headerVisible;
+            if (headerVisible) {
+                topBar.classList.remove('hidden');
+                btn.textContent = 'Hide Controls';
+                btn.style.backgroundColor = 'var(--wrong-color)';
+            } else {
+                topBar.classList.add('hidden');
+                btn.textContent = 'Show Controls';
+                btn.style.backgroundColor = 'var(--primary-dark)';
+            }
+        }
+
+        // RAW DATA: All Extracted Questions
+        const rawData = `
+## Basic Concepts Section (Additional)
+1. **What is the main purpose of an abstract?**
+   - To summarize the entire report briefly
+   - To list all sources in detail
+   - To explain formatting rules clearly
+   - To show raw numerical data
+2. **An executive summary is mainly prepared for:**
+   - Business and professional stakeholders
+   - Academic research journal readers
+   - Primary school language learners
+   - Personal online blog visitors
+3. **The table of contents allows readers to:**
+   - Locate report sections quickly
+   - Check grammar accuracy carefully
+   - Evaluate research reliability
+   - Improve vocabulary knowledge
+4. **The introduction section usually contains:**
+   - Background and research objectives
+   - Raw data and calculations
+   - Complete bibliography entries
+   - Page numbering formats
+5. **The body of a technical report should:**
+   - Present data and detailed analysis
+   - Include only personal opinions
+   - Repeat abstract statements
+   - Avoid structured headings
+6. **The conclusion section mainly aims to:**
+   - Summarize key findings clearly
+   - Introduce unrelated new topics
+   - Add supporting raw data
+   - Explain citation rules
+7. **Recommendations in reports are:**
+   - Suggested actions based on results
+   - Required in all academic essays
+   - Personal views without evidence
+   - Repeated introduction points
+8. **The references section is used to:**
+   - Show sources used in writing
+   - List experimental procedures
+   - Present graphs and figures
+   - Describe research objectives
+9. **Appendices generally include:**
+   - Supporting materials and raw data
+   - Brief research summaries
+   - Author contact information
+   - Formatting instructions
+10. **Formatting guidelines usually control:**
+    - Font style and page layout
+    - Research topic selection
+    - Personal writing opinions
+    - Classroom teaching methods
+11. **The methodology section explains:**
+    - Research procedures and methods
+    - Final conclusions only
+    - Personal background details
+    - Complete citation styles
+12. **The results and discussion section focuses on:**
+    - Data presentation and interpretation
+    - Grammar correction rules
+    - Abstract writing techniques
+    - Reference organization methods
+13. **Technical writing should be:**
+    - Precise and professionally written
+    - Emotional and highly descriptive
+    - Informal and conversational
+    - Creative and imaginative
+14. **Conciseness in writing means:**
+    - Expressing ideas clearly and briefly
+    - Using difficult vocabulary terms
+    - Writing long detailed paragraphs
+    - Avoiding technical language
+15. **Plagiarism occurs when someone:**
+    - Copies work without proper citation
+    - Designs tables and diagrams
+    - Uses original personal ideas
+    - Revises drafts carefully
+16. **Data integrity requires researchers to:**
+    - Present information honestly and accurately
+    - Modify numbers for better results
+    - Ignore unexpected outcomes
+    - Reduce the number of tables
+17. **IEEE and APA are examples of:**
+    - Common academic citation styles
+    - Statistical analysis software
+    - Engineering laboratory tools
+    - Graphic design applications
+18. **Proofreading a report helps to:**
+    - Improve grammar and readability
+    - Add more experimental results
+    - Increase the report length
+    - Change research objectives
+19. **Peer review is important because it:**
+    - Provides feedback for improvement
+    - Adds unnecessary complexity
+    - Replaces the conclusion section
+    - Removes citation requirements
+20. **Oral presentations should:**
+    - Summarize key points effectively
+    - Read the report word by word
+    - Avoid visual support tools
+    - Ignore audience questions
+21. **Which part of a report lists technical terms?**
+    - The Glossary section of the report
+    - The Bibliography at the end
+    - The Abstract on the first page
+    - The Appendix at the very back
+22. **The primary audience for a technical report is:**
+    - Decision makers and specialists
+    - Random people on social media
+    - Primary school student groups
+    - Fictional characters in novels
+23. **A cover letter for a report is also called:**
+    - A letter of transmittal
+    - A personal invitation card
+    - A research grant application
+    - A formal apology document
+24. **Objective writing avoids using:**
+    - Personal bias and emotions
+    - Technical terms and jargon
+    - Graphs and numerical data
+    - Headings and sub-headings
+25. **The 'Front Matter' of a report includes:**
+    - Title page and table of contents
+    - Raw data and raw calculations
+    - References and bibliography
+    - Conclusion and future work
+26. **Reliability in research refers to:**
+    - Consistency of the results
+    - The length of the final paper
+    - The number of images used
+    - The font style of the text
+27. **A feasibility study determines if:**
+    - A project is practical to do
+    - The author is famous enough
+    - The report has enough colors
+    - The bibliography is very long
+28. **Graphs should be used when:**
+    - Showing trends or comparisons
+    - Explaining personal feelings
+    - Listing names of employees
+    - Describing a beautiful scene
+29. **The back matter usually contains:**
+    - Appendices and references
+    - The abstract and summary
+    - The introduction and goals
+    - The methodology and tools
+30. **Technical reports are different from essays because:**
+    - They are highly structured and factual
+    - They focus on creative fiction
+    - They never use any numbered lists
+    - They are always written in red
+
+## Punctuation Section (Additional)
+1. **Why is correct punctuation important in technical writing?**
+   - It helps convey meaning clearly
+   - It makes writing longer and detailed
+   - It replaces technical vocabulary
+   - It reduces the number of sentences
+2. **Incorrect punctuation may cause:**
+   - Confusion and misinterpretation
+   - Clear interpretation of ideas
+   - Improved reader understanding
+   - Faster writing completion
+3. **Capital letters are required for:**
+   - Proper nouns and names
+   - Common everyday nouns
+   - Regular action verbs
+   - Short connecting words
+4. **Acronyms such as 'NASA' are usually written in:**
+   - Capital letters
+   - Lowercase letters only
+   - Italic font style
+   - Quotation marks
+5. **Titles and headings should follow:**
+   - Consistent capitalization rules
+   - Random capitalization styles
+   - Informal texting language
+   - Abbreviated sentence forms
+6. **A period (.) is mainly used to:**
+   - End a complete sentence
+   - Join two equal clauses
+   - Introduce a detailed list
+   - Show omitted words
+7. **A comma (,) is commonly used to:**
+   - Separate items in a list
+   - End independent clauses
+   - Replace parentheses
+   - Show strong contrast
+8. **A colon (:) is often used to:**
+   - Introduce lists or explanations
+   - Indicate possession
+   - Join short sentences
+   - Show missing information
+9. **A semicolon (;) is used to:**
+   - Separate closely related clauses
+   - End short simple sentences
+   - Replace question marks
+   - Indicate plural forms
+10. **An apostrophe (') is used to show:**
+    - Possession or contraction
+    - Sentence completion
+    - List introduction
+    - Strong separation
+11. **Quotation marks (" ") are used to:**
+    - Indicate direct speech
+    - Highlight section headings
+    - Separate list items
+    - Show mathematical values
+12. **Parentheses ( ) are commonly used to:**
+    - Add extra information
+    - End formal letters
+    - Replace commas entirely
+    - Introduce conclusions
+13. **A hyphen (-) is mainly used to:**
+    - Join words in compounds
+    - End a paragraph
+    - Replace quotation marks
+    - Separate large sections
+14. **A dash (—) is often used to:**
+    - Indicate strong interruption
+    - Show word possession
+    - Separate list elements
+    - Mark abbreviations
+15. **An ellipsis (…) shows:**
+    - Omitted or missing words
+    - Complete final thoughts
+    - Strong emphasis points
+    - Possessive relationships
+16. **A slash (/) is commonly used to:**
+    - Separate alternatives
+    - End formal documents
+    - Replace capital letters
+    - Introduce explanations
+17. **Capitalization is especially important for:**
+    - Technical terms and symbols
+    - Informal spoken language
+    - Everyday common objects
+    - Short prepositions only
+18. **Using punctuation correctly helps to:**
+    - Improve clarity and accuracy
+    - Increase word count unnecessarily
+    - Avoid writing introductions
+    - Remove technical terms
+19. **Overusing punctuation can:**
+    - Create reader confusion
+    - Improve logical flow
+    - Clarify technical meaning
+    - Strengthen formal tone
+20. **In technical writing, punctuation should be:**
+    - Accurate and consistent
+    - Random and flexible
+    - Emotional and expressive
+    - Creative and decorative
+21. **Which mark separates city and state?**
+    - A comma placed between them
+    - A period placed between them
+    - A colon placed between them
+    - A hyphen placed between them
+22. **A colon is used after a complete sentence to:**
+    - Introduce a long block quote
+    - Ask a very difficult question
+    - End the entire report body
+    - Separate two unrelated ideas
+23. **To show shared possession (A and B's):**
+    - Add apostrophe to the last name
+    - Add apostrophe to both names
+    - Add apostrophe to the first name
+    - Use no apostrophes at all
+24. **A semicolon can join two sentences if:**
+    - They are closely related in idea
+    - One is a question and one isn't
+    - They have different font styles
+    - They are in different languages
+25. **Brackets [ ] are used in technical writing to:**
+    - Insert comments in a quote
+    - Show the end of a paragraph
+    - Highlight the main title
+    - List the table of contents
+26. **An exclamation mark (!) is usually:**
+    - Avoided in technical reports
+    - Used after every single verb
+    - Required in methodology sections
+    - Placed inside every equation
+27. **Which mark is used for a range (10–20)?**
+    - An en-dash or a hyphen
+    - A full stop or a period
+    - A colon or a semicolon
+    - A comma or a slash
+28. **The 'Oxford Comma' is placed:**
+    - Before 'and' in a series
+    - At the very start of a page
+    - Inside a set of parentheses
+    - After the final period
+29. **Direct questions must always end with:**
+    - A standard question mark (?)
+    - A colon for explanation
+    - A comma for separation
+    - An apostrophe for possession
+30. **In decimal numbers, English uses:**
+    - A period (e.g., 5.50)
+    - A comma (e.g., 5,50)
+    - A colon (e.g., 5:50)
+    - A dash (e.g., 5-50)
+
+## Parts of Speech Section (Additional)
+1. **In 'The engineer designed the circuit,' engineer is a:**
+   - Noun naming a person
+   - Verb expressing action
+   - Adjective describing design
+   - Adverb modifying designed
+2. **In 'The bridge supports heavy loads,' bridge is a:**
+   - Noun naming a structure
+   - Verb showing action
+   - Adjective describing loads
+   - Adverb modifying supports
+3. **In 'The mechanical system is efficient,' mechanical is a:**
+   - Adjective describing system
+   - Verb showing condition
+   - Noun naming equipment
+   - Adverb modifying efficient
+4. **In 'The technician quickly fixed the motor,' quickly is a:**
+   - Adverb modifying fixed
+   - Noun naming a method
+   - Adjective describing motor
+   - Verb expressing action
+5. **In 'The software runs smoothly,' runs is a:**
+   - Verb expressing action
+   - Noun naming process
+   - Adjective describing software
+   - Preposition showing relation
+6. **In 'The cables are under the floor,' under is a:**
+   - Preposition showing relationship
+   - Verb indicating movement
+   - Noun naming location
+   - Adjective describing cables
+7. **In 'The supervisor approved the design because it was safe,' because is a:**
+   - Conjunction joining clauses
+   - Preposition of place
+   - Adverb modifying approved
+   - Interjection expressing feeling
+8. **In 'Wow, the prototype works perfectly!' Wow is a:**
+   - Interjection showing emotion
+   - Noun naming reaction
+   - Verb expressing action
+   - Adjective describing prototype
+9. **In 'The engineer tested the device and recorded the results,' and is a:**
+   - Conjunction joining actions
+   - Preposition of direction
+   - Adverb modifying tested
+   - Pronoun replacing device
+10. **In 'Sarah presented her project,' her is a:**
+    - Pronoun replacing noun
+    - Noun naming person
+    - Verb showing action
+    - Adjective describing project
+11. **In 'The voltage increased significantly,' significantly is a:**
+    - Adverb modifying increased
+    - Adjective describing voltage
+    - Noun naming measurement
+    - Conjunction linking ideas
+12. **In 'The steel structure is strong,' strong is a:**
+    - Adjective describing structure
+    - Noun naming material
+    - Verb expressing state
+    - Adverb modifying is
+13. **In 'They installed the software carefully,' installed is a:**
+    - Verb expressing action
+    - Noun naming process
+    - Adjective describing software
+    - Preposition showing place
+14. **In 'The report explains the results clearly,' report is a:**
+    - Noun naming a document
+    - Adverb modifying explains
+    - Verb expressing action
+    - Conjunction joining ideas
+15. **In 'The sensor detected high pressure,' pressure is a:**
+    - Noun naming a concept
+    - Verb expressing action
+    - Adjective describing sensor
+    - Adverb modifying detected
+16. **In 'The machine operates very efficiently,' very is a:**
+    - Adverb modifying efficiently
+    - Adjective describing machine
+    - Noun naming intensity
+    - Preposition showing relation
+17. **In 'The engineer checked the system before operation,' before is a:**
+    - Preposition showing time
+    - Noun naming sequence
+    - Verb expressing action
+    - Interjection showing surprise
+18. **In 'The components were damaged during transport,' during is a:**
+    - Preposition showing time
+    - Adverb modifying damaged
+    - Conjunction joining clauses
+    - Adjective describing transport
+19. **In 'This device improves performance,' This is a:**
+    - Pronoun replacing noun
+    - Verb expressing action
+    - Adverb modifying improves
+    - Preposition of direction
+20. **In 'The engineers analyzed the data thoroughly,' thoroughly is a:**
+    - Adverb modifying analyzed
+    - Noun naming method
+    - Verb expressing action
+    - Adjective describing data
+21. **In 'The large turbine rotated,' the word large is a:**
+    - Adjective describing turbine
+    - Noun naming the size
+    - Verb showing movement
+    - Adverb modifying rotated
+22. **In 'He will repair the pump soon,' the word will is a:**
+    - Helping verb showing future
+    - Main noun of the sentence
+    - Adjective describing pump
+    - Preposition of direction
+23. **In 'The current flows through the wire,' through is a:**
+    - Preposition showing path
+    - Verb showing movement
+    - Noun naming a location
+    - Adverb modifying flows
+24. **In 'The oil or the water is leaking,' the word or is a:**
+    - Conjunction showing choice
+    - Preposition of location
+    - Pronoun replacing a noun
+    - Verb showing a state
+25. **In 'The metal expands when heated,' expands is a:**
+    - Verb expressing action
+    - Noun naming a physical law
+    - Adjective describing metal
+    - Adverb modifying heated
+26. **In 'The solar panel is extremely hot,' extremely is a:**
+    - Adverb modifying hot
+    - Adjective describing panel
+    - Noun naming temperature
+    - Verb showing a condition
+27. **In 'It measures the temperature,' the word It is a:**
+    - Pronoun replacing a noun
+    - Noun naming a machine
+    - Verb showing an action
+    - Adjective describing heat
+28. **In 'The small gears grind slowly,' the word slowly is a:**
+    - Adverb modifying grind
+    - Adjective describing gears
+    - Noun naming the speed
+    - Verb showing movement
+29. **In 'Between the two supports, there is a beam,' Between is a:**
+    - Preposition showing place
+    - Conjunction joining ideas
+    - Adverb modifying there
+    - Noun naming a gap
+30. **In 'Finally, the project was finished,' Finally is a:**
+    - Adverb showing sequence
+    - Adjective describing project
+    - Noun naming the end
+    - Verb showing completion
+
+## Technical Writing Section (Additional)
+1. **Standard reports must be written in:**
+   - Professional objective language
+   - Informal slang language
+   - Personal poetic language
+   - Secret coded language
+2. **The passive voice is often used to:**
+   - Focus on the action performed
+   - Make the writer sound angry
+   - Add more adjectives
+   - Reduce the page count
+3. **An instruction manual should use:**
+   - Imperative verbs and steps
+   - Vague stories and myths
+   - Complex literary metaphors
+   - Emotional personal diary entries
+4. **Peer editing mainly helps to:**
+   - Identify errors and clarify logic
+   - Copy someone else's idea
+   - Change the research topic
+   - Avoid writing the summary
+5. **Effective headings should be:**
+   - Brief and highly descriptive
+   - Long and confusing sentences
+   - Random numbers and symbols
+   - Hidden from the reader
+6. **Graphs must always include:**
+   - Clear labels and axis titles
+   - Hidden data points
+   - Incorrect numerical values
+   - Abstract colorful paintings
+7. **A laboratory report records:**
+   - Methods and experimental results
+   - Daily personal feelings
+   - Future weather predictions
+   - Shopping list items
+8. **Clarity in writing means:**
+   - Ideas are easy to understand
+   - Using the longest words possible
+   - Hiding the main conclusion
+   - Writing in a foreign script
+9. **A proposal is written to:**
+   - Request approval for projects
+   - Summarize a finished project
+   - Criticize other researchers
+   - Delete existing database records
+10. **Which is a professional closing?**
+    - Yours sincerely,
+    - See ya later!
+    - Maybe talk soon.
+    - Sent from my phone.
+11. **Technical English is used in:**
+    - Engineering and technology
+    - Cooking competition shows
+    - Writing fictional novels
+    - Daily casual conversations
+12. **Summarizing involves:**
+    - Shortening long information
+    - Expanding one word to ten
+    - Deleting all the results
+    - Adding fake data points
+13. **Consistency in style means:**
+    - Using same fonts and formats
+    - Changing layout on every page
+    - Using different languages
+    - Mixing formal and informal
+14. **A feasibility report checks:**
+    - If a project can be done
+    - The history of the earth
+    - How many people like blue
+    - The price of groceries
+15. **Safety warnings should be:**
+    - Highly visible and clear
+    - Hidden in small footnotes
+    - Written as a long poem
+    - Optional for the reader
+16. **Numbered lists are used for:**
+    - Sequential steps or rankings
+    - Naming random friends
+    - Writing a formal letter
+    - Adding page numbers only
+17. **Bullet points are used for:**
+    - Non-sequential items or lists
+    - Starting every sentence
+    - Marking the end of a page
+    - Calculating math equations
+18. **Professional emails should:**
+    - Have a clear subject line
+    - Be 50 pages long
+    - Contain many emojis
+    - Be sent without a name
+19. **Brainstorming is used to:**
+    - Generate ideas for writing
+    - Stop a project immediately
+    - Correct spelling mistakes
+    - Print the final copy
+20. **A glossary is a list of:**
+    - Definitions for technical terms
+    - Names of the authors
+    - All the used equipment
+    - Every word in the report
+21. **In a formal report, avoid using:**
+    - Contractions like 'don't'
+    - Numbered list formats
+    - Tables and figure titles
+    - The third person perspective
+22. **Visual aids like pie charts show:**
+    - Parts of a whole percentage
+    - Trends over many years
+    - Geographic locations only
+    - Step-by-step instructions
+23. **The tone of technical writing is:**
+    - Neutral and professional
+    - Funny and entertaining
+    - Aggressive and demanding
+    - Sarcastic and humorous
+24. **Paraphrasing means to:**
+    - Rewrite in your own words
+    - Copy the text exactly
+    - Delete half the sentence
+    - Use bold font on every word
+25. **A white paper is used to:**
+    - Explain a technical concept
+    - List employees' birthdays
+    - Publish personal poetry
+    - Draw sketches of machines
+26. **What does 'SME' stand for?**
+    - Subject Matter Expert
+    - Simple Machine Engine
+    - Standard Metal Element
+    - Small Media Environment
+27. **User personas help writers:**
+    - Understand the target reader
+    - Select the font color
+    - Calculate the project cost
+    - Repair broken machinery
+28. **An index is located:**
+    - At the end of the document
+    - Before the title page
+    - Inside the introduction
+    - On the cover of the book
+29. **A revision history table shows:**
+    - Changes made to the draft
+    - The names of all readers
+    - The cost of the printing
+    - The history of the company
+30. **Technical writers use 'Active Voice' to:**
+    - Identify who does the action
+    - Hide the person responsible
+    - Make the sentence longer
+    - Sound more confusing
+
+## Punctuation Section
+1. **Select the correctly punctuated sentence connecting two independent clauses:**
+   - The power ratings are 5V, 2A; 12V, 1.5A; and 24V, 1A.
+   - The power ratings are 5V, 2A, 12V, 1.5A, and 24V, 1A.
+   - The power ratings are 5V; 2A; 12V; 1.5A.
+   - The power ratings are 5V 2A 12V 1.5A.
+2. **Identify the correct use of a colon in technical writing:**
+   - Baud rate: 9600 bps.
+   - Baud rate is: 9600 bps.
+   - Baud: rate 9600 bps.
+   - Baud rate; 9600 bps.
+3. **Which sentence correctly uses an apostrophe for possession?**
+   - The sensor's accuracy is ±0.5°C.
+   - The sensors accuracy is ±0.5°C.
+   - The sensors's accuracy is ±0.5°C.
+   - The sensor accuracy's is ±0.5°C.
+4. **Choose the sentence with correct capitalization:**
+   - The simulation results confirm the hypothesis.
+   - the simulation results confirm the hypothesis.
+   - The Simulation Results confirm the hypothesis.
+   - the Simulation results confirm the hypothesis.
+5. **Select the correct format for expanding an engineering acronym:**
+   - CPU (Central Processing Unit)
+   - Cpu (Central processing unit)
+   - cpu (Central Processing Unit)
+   - cPu (central processing unit)
+6. **How should this document title be correctly capitalized?**
+   - Design and Implementation of Wireless Networks
+   - Design And Implementation Of Wireless Networks
+   - design and implementation of wireless networks
+   - Design and implementation of Wireless networks
+7. **Choose the correct format for units of measurement without abbreviation:**
+   - 10 amperes
+   - 10 Amperes
+   - 10 AMPERES
+   - 10-amperes
+8. **Which is the correctly formatted file path?**
+   - C:/Users/Documents/report.pdf
+   - C:\\Users\\Documents\\report.pdf
+   - C:-Users-Documents-report.pdf
+   - C:;Users;Documents;report.pdf
+9. **Select the sentence with the correct use of quotation marks for a direct citation:**
+   - The datasheet states, "The maximum input voltage is 5V."
+   - The datasheet states The maximum input voltage is "5V."
+   - "The datasheet states," The maximum input voltage is 5V.
+   - The datasheet states, "The maximum input voltage is 5V".
+10. **Which sentence correctly applies a hyphen to join a compound word?**
+    - A 16-bit processor is faster than an 8-bit one.
+    - A 16 bit processor is faster than an 8 bit one.
+    - A 16-bit processor is faster than an 8 bit one.
+    - A 16 bit-processor is faster than an 8-bit one.
+11. **Select the correctly punctuated sentence using parentheses to add extra information:**
+    - The voltage regulator (LM7805) provides a stable 5V output.
+    - The voltage regulator LM7805 (provides a stable 5V output).
+    - (The voltage regulator) LM7805 provides a stable 5V output.
+    - The voltage regulator LM7805 provides a (stable 5V output).
+12. **Identify the correct use of an ellipsis to indicate omitted information:**
+    - The sequence is 0, 1, 1, 2, 3, ...
+    - The sequence is 0, 1, 1, 2, 3 ... .
+    - The sequence is 0, 1, 1, 2, 3, ....
+    - The sequence is 0, 1, 1, 2, 3...
+13. **Choose the sentence with proper comma placement after an introductory phrase:**
+    - After the simulation, check the circuit connections.
+    - After the simulation check the circuit connections.
+    - After, the simulation check the circuit connections.
+    - After the simulation check, the circuit connections.
+14. **Select the correctly punctuated list of elements:**
+    - The system requires resistors, capacitors, diodes, and transistors.
+    - The system requires resistors capacitors diodes and transistors.
+    - The system requires: resistors, capacitors, diodes, and transistors.
+    - The system requires, resistors, capacitors, diodes, and transistors.
+15. **Identify the correct formal sentence avoiding contractions:**
+    - It is essential to check the circuit.
+    - Its essential to check the circuit.
+    - It's essential to check the circuit.
+    - It essential's to check the circuit.
+16. **Choose the sentence applying a slash correctly to represent an alternative:**
+    - Power rating: 50W/100W (dual-mode operation).
+    - Power rating: 50W\\100W (dual-mode operation).
+    - Power rating: 50W-100W (dual-mode operation).
+    - Power rating: 50W;100W (dual-mode operation).
+
+## Tenses Section
+1. **Fill in the blank (Present Simple): The processor _______ instructions from the computer's memory.**
+   - executes
+   - executed
+   - is executing
+   - will execute
+2. **Fill in the blank (Past Simple): Yesterday, the hard drive _______ data in magnetic form.**
+   - stored
+   - stores
+   - has stored
+   - will store
+3. **Fill in the blank (Future Simple): Tomorrow, the router _______ traffic between different networks.**
+   - will direct
+   - directs
+   - directed
+   - has directed
+4. **Fill in the blank (Present Perfect): The operating system _______ the resources effectively since its installation.**
+   - has managed
+   - manages
+   - managed
+   - will manage
+5. **Change the following active sentence to Passive Voice: 'The software program processes information.'**
+   - Information is processed by the software program.
+   - Information was processed by the software program.
+   - Information will be processed by the software program.
+   - Information has been processed by the software program.
+6. **Change the following active sentence to Passive Voice: 'The processor executed instructions.'**
+   - Instructions were executed by the processor.
+   - Instructions are executed by the processor.
+   - Instructions have been executed by the processor.
+   - Instructions will be executed by the processor.
+7. **Change the following active sentence to Passive Voice: 'The hard drive will store data.'**
+   - Data will be stored on the hard drive.
+   - Data is stored on the hard drive.
+   - Data was stored on the hard drive.
+   - Data has been stored on the hard drive.
+8. **Change the following active sentence to Passive Voice: 'The router has directed billions of packets.'**
+   - Billions of packets have been directed by the router.
+   - Billions of packets are directed by the router.
+   - Billions of packets were directed by the router.
+   - Billions of packets will be directed by the router.
+9. **Make this sentence grammatically negative: 'The hard drive stores data.'**
+   - The hard drive does not store data.
+   - The hard drive did not store data.
+   - The hard drive is not storing data.
+   - The hard drive will not store data.
+10. **Make this sentence grammatically negative: 'The software program used algorithms.'**
+    - The software program did not use algorithms.
+    - The software program does not use algorithms.
+    - The software program has not used algorithms.
+    - The software program will not use algorithms.
+11. **Form a correct WH-Question for this statement: 'The router directs traffic.'**
+    - What does the router direct?
+    - What did the router direct?
+    - What will the router direct?
+    - What has the router directed?
+12. **Form a correct WH-Question for this statement: 'The processor executed instructions.'**
+    - What did the processor execute?
+    - What does the processor execute?
+    - What will the processor execute?
+    - What has the processor executed?
+13. **Form a correct Yes/No Question for this statement: 'The operating system will manage resources.'**
+    - Will the operating system manage resources?
+    - Does the operating system manage resources?
+    - Did the operating system manage resources?
+    - Has the operating system managed resources?
+14. **Form a correct Yes/No Question for this statement: 'The hard drive has stored data.'**
+    - Has the hard drive stored data?
+    - Does the hard drive store data?
+    - Did the hard drive store data?
+    - Will the hard drive store data?
+15. **Fill in the blank with the negative Present Perfect: The processor _______ millions of instructions yet.**
+    - has not executed
+    - did not execute
+    - does not execute
+    - will not execute
+16. **Fill in the blank with the negative Future Simple: The software program _______ information without user input.**
+    - will not process
+    - does not process
+    - did not process
+    - has not processed
+
+## Basic Concepts Section
+1. **You just finished testing a new material and need to share the original findings. What document do you write?**
+   - Research Report
+   - Feasibility Report
+   - Progress Report
+   - User Manual
+2. **Your manager wants to know if building a new solar plant is viable. What do you prepare?**
+   - Feasibility Report
+   - Case Study
+   - Research Report
+   - User Manual
+3. **The client wants an update on what your team accomplished this week. What do you send?**
+   - Progress Report
+   - Recommendation Report
+   - White Paper
+   - Technical Specification
+4. **You are tasked with analyzing three different software tools and suggesting the best one to buy. What do you write?**
+   - Recommendation Report
+   - Progress Report
+   - Case Study
+   - Feasibility Report
+5. **The manufacturing team needs exact dimensions, tolerances, and material requirements to build a part. What document do they need?**
+   - Technical Specification
+   - Research Report
+   - Recommendation Report
+   - Progress Report
+6. **A customer just bought your product and doesn't know how to turn it on. What should they read?**
+   - User Manual
+   - Technical Specification
+   - White Paper
+   - Recommendation Report
+7. **Your company wants to publish an in-depth document arguing for the adoption of a new security protocol to educate stakeholders. What is this?**
+   - White Paper
+   - Progress Report
+   - Case Study
+   - Feasibility Report
+8. **You are analyzing a specific past bridge failure to draw lessons for future designs. What kind of report is this?**
+   - Case Study
+   - User Manual
+   - White Paper
+   - Technical Specification
+9. **What should you write at the very beginning of an academic report to give a concise overview of the entire document?**
+   - Abstract
+   - Introduction
+   - Conclusion
+   - Executive Summary
+10. **Where should you place the background information and the problem statement in your report?**
+    - Introduction
+    - Body
+    - Abstract
+    - References
+11. **In which section should you place detailed raw data, extra calculations, and large figures that would clutter the main text?**
+    - Appendices
+    - Introduction
+    - Methodology
+    - Abstract
+12. **You need to present your experimental numbers effectively. What is the best approach?**
+    - Use well-labeled graphics and tables
+    - Replace the text entirely
+    - Make the report longer
+    - Hide complex calculations
+13. **You copy a paragraph from an IEEE journal without citing it. What ethical rule did you violate?**
+    - Plagiarism
+    - Data Integrity
+    - Authorship
+    - Clarity
+14. **You are concluding your report and need to suggest specific actions for the company to take. In which section does this go?**
+    - Recommendations
+    - Abstract
+    - Methodology
+    - Introduction
+15. **You are formatting your citations for an engineering paper. Which style is most commonly expected?**
+    - IEEE
+    - Programming Languages
+    - Report Formats
+    - Ethical Standards
+16. **You need to break down your main analysis into readable chunks. What formatting tool should you use?**
+    - Clear headings and subheadings
+    - Abstract paragraphs
+    - Multiple appendices
+    - Only bullet points
+
+## Articles Section
+1. **Fill in the blank with the correct articles: 'Connect ___ device to ___ port.' (Assume general instructions)**
+   - the / a
+   - a / the
+   - the / the
+   - a / a
+2. **Fill in the blank applying the article rule: 'Design ___ PCB layout for the microcontroller.'**
+   - a
+   - an
+   - the
+   - (no article)
+3. **Fill in the blank applying the article rule: 'The engineer designed ___ UAV for monitoring the network.'**
+   - a
+   - an
+   - the
+   - (no article)
+4. **Fill in the blank applying the article rule: 'The algorithm requires ___ accuracy of 99.9%.'**
+   - an
+   - a
+   - the
+   - (no article)
+5. **Fill in the blank applying the article rule: 'Data is stored in ___ cloud for remote access.'**
+   - the
+   - a
+   - an
+   - (no article)
+6. **Fill in the blank with the correct articles: 'We used ___ 3D printer to create ___ prototype.'**
+   - a / a
+   - an / a
+   - the / the
+   - a / the
+7. **Fill in the blank applying the article rule for a general statement: '___ algorithms process data.'**
+   - (no article)
+   - The
+   - A
+   - An
+8. **Fill in the blank applying the article rule for uncountable nouns: 'We need ___ copper wire for the circuit.'**
+   - (no article)
+   - a
+   - an
+   - the
+9. **Fill in the blank applying the article rule for proper nouns: '___ MATLAB is used for simulations.'**
+   - (no article)
+   - The
+   - A
+   - An
+10. **Fill in the blank applying the article rule based on sound: 'Connect the device to ___ USB port.'**
+    - a
+    - an
+    - the
+    - (no article)
+11. **Select the sentence with correct article usage applied:**
+    - The system uses machine learning to optimize bandwidth.
+    - System uses machine learning to optimize bandwidth.
+    - A system uses the machine learning to optimize bandwidth.
+    - The system uses the machine learning to optimize the bandwidth.
+12. **Select the sentence with correct article usage applied:**
+    - The engineers analyzed the noise in the signal.
+    - Engineers analyzed noise in signal.
+    - The engineers analyzed a noise in a signal.
+    - Engineers analyzed the noise in signal.
+13. **Fill in the blank for a specific noun: 'The results show ___ algorithm's efficiency.'**
+    - the
+    - a
+    - an
+    - (no article)
+14. **Fill in the blank applying the article rule based on sound: 'Use ___ oscilloscope to capture the waveform.'**
+    - an
+    - a
+    - the
+    - (no article)
+15. **Select the sentence with correct specific article usage applied:**
+    - The transistor in Figure 5 is defective.
+    - A transistor in Figure 5 is defective.
+    - Transistor in Figure 5 is defective.
+    - An transistor in Figure 5 is defective.
+16. **Fill in the blank applying the article rule for an uncountable noun: 'Software requires frequent ___ updates.'**
+    - (no article)
+    - a
+    - an
+    - the
+
+## Parts of Speech Section
+1. **Identify the part of speech of the capitalized word in context: 'Mike OWNS the fastest car.'**
+   - Verb
+   - Noun
+   - Adjective
+   - Adverb
+2. **Identify the part of speech of the capitalized word in context: 'That was an EXCITING film.'**
+   - Adjective
+   - Adverb
+   - Verb
+   - Noun
+3. **Identify the part of speech of the capitalized word in context: 'She walked SLOWLY to the lab.'**
+   - Adverb
+   - Adjective
+   - Verb
+   - Preposition
+4. **Identify the part of speech of the capitalized word in context: 'The book is ON the table.'**
+   - Preposition
+   - Conjunction
+   - Pronoun
+   - Adverb
+5. **Identify the part of speech of the capitalized word in context: 'JOHN gave her a gift.'**
+   - Noun
+   - Pronoun
+   - Verb
+   - Adjective
+6. **Identify the part of speech of the capitalized word in context: 'He is tall AND slim.'**
+   - Conjunction
+   - Preposition
+   - Pronoun
+   - Adverb
+7. **Identify the part of speech of the capitalized word in context: 'WOW, that is brilliant news!'**
+   - Interjection
+   - Conjunction
+   - Adverb
+   - Pronoun
+8. **Identify the part of speech of the capitalized word in context: 'John gave HER a gift.'**
+   - Pronoun
+   - Noun
+   - Adjective
+   - Adverb
+9. **Which word in the following sentence functions as a Verb? 'The floods are serious.'**
+   - are
+   - The
+   - floods
+   - serious
+10. **Which word in the following sentence functions as an Adjective? 'The boy in the red jumper is happy.'**
+    - red
+    - boy
+    - jumper
+    - is
+11. **Which word in the following sentence functions as an Adverb? 'The police arrived very quickly.'**
+    - quickly
+    - police
+    - arrived
+    - The
+12. **Which word in the following sentence functions as a Preposition? 'He went into the room.'**
+    - into
+    - He
+    - went
+    - room
+13. **Which word in the following sentence functions as a Pronoun? 'Please look after yourself.'**
+    - yourself
+    - Please
+    - look
+    - after
+14. **Which word in the following sentence functions as a Conjunction? 'Tom is sick so he is not here.'**
+    - so
+    - sick
+    - here
+    - not
+15. **Which word in the following sentence functions as a Noun? 'I believe in free speech.'**
+    - speech
+    - believe
+    - in
+    - free
+16. **Which word in the following sentence functions as an Interjection? 'Ouch, that really hurt.'**
+    - Ouch
+    - that
+    - really
+    - hurt
+
+## Word Formation Section
+1. **The battery must be ______ after it becomes empty.**
+   - recharge
+   - discharge
+   - overload
+   - undercharge
+2. **The engineer decided to ______ the circuit after the failure.**
+   - rebuild
+   - disable
+   - disconnect
+   - underload
+3. **To change the software settings again, the controller must be ______.**
+   - reprogrammed
+   - disassembled
+   - overloaded
+   - transmitted
+4. **When a cable is removed, the technician must ______ it.**
+   - reconnect
+   - disable
+   - underconnect
+   - disconnect
+5. **The system must ______ after maintenance.**
+   - restart
+   - understart
+   - discharge
+   - transmit
+6. **To correct measurement errors, instruments must be ______.**
+   - recalibrated
+   - disconnected
+   - overloaded
+   - automated
+7. **If the configuration fails, the engineer will ______ the system.**
+   - reconfigure
+   - disconnect
+   - disable
+   - underperform
+8. **After testing, the machine was ______ again.**
+   - reassembled
+   - overloaded
+   - underheated
+   - transmitted
+9. **The technician had to ______ the control program.**
+   - reinitialize
+   - underconnect
+   - overload
+   - discharge
+10. **The broken unit must be ______ before installation.**
+    - rebuilt
+    - underbuilt
+    - disabled
+    - transmitted
+11. **Before repairing the circuit, always ______ the power supply.**
+    - disconnect
+    - reconnect
+    - underconnect
+    - transmit
+12. **The protection system will ______ the faulty module.**
+    - disable
+    - recharge
+    - reconnect
+    - rebuild
+13. **Engineers ______ the motor to inspect its components.**
+    - disassembled
+    - reassembled
+    - transmitted
+    - automated
+14. **A capacitor will slowly ______ through a resistor.**
+    - discharge
+    - recharge
+    - overcharge
+    - reconnect
+15. **When gears separate, they ______ from each other.**
+    - disengage
+    - recharge
+    - reconnect
+    - automate
+16. **A signal that stops and starts is called ______.**
+    - discontinuous
+    - continuous
+    - automatic
+    - wireless
+17. **To repair the circuit board, engineers must ______ the device.**
+    - disassemble
+    - reconnect
+    - recharge
+    - automate
+18. **When a system stops functioning, engineers may ______ it temporarily.**
+    - disable
+    - recharge
+    - restart
+    - transmit
+19. **Removing a cable from the system will ______ it.**
+    - disconnect
+    - reconnect
+    - overconnect
+    - microconnect
+20. **Capacitors ______ stored energy during operation.**
+    - discharge
+    - reconnect
+    - rebuild
+    - transmit
+21. **When too many devices are connected, the circuit may ______.**
+    - overload
+    - underload
+    - disconnect
+    - reassemble
+22. **Motors may ______ if they run continuously without cooling.**
+    - overheat
+    - recharge
+    - discharge
+    - underheat
+23. **Excess voltage in a system is called ______.**
+    - overvoltage
+    - undervoltage
+    - transmission
+    - automation
+24. **When current becomes too high, it is called ______.**
+    - overcurrent
+    - undercurrent
+    - microcurrent
+    - transmission
+25. **Batteries should not be ______ during charging.**
+    - overcharged
+    - undercharged
+    - disconnected
+    - transmitted
+26. **A motor rotating too fast experiences ______.**
+    - overspeed
+    - underspeed
+    - recharge
+    - microprocess
+27. **Protection circuits prevent ______ conditions.**
+    - overload
+    - underperform
+    - discharge
+    - transmission
+28. **High current can cause an ______ condition.**
+    - overcurrent
+    - undercurrent
+    - reconnect
+    - automation
+29. **Too much heat may cause the system to ______.**
+    - overheat
+    - recharge
+    - disconnect
+    - interconnect
+30. **When power demand is too high, the system may ______.**
+    - overload
+    - underload
+    - reconnect
+    - microconnect
+31. **When voltage is too low, it is called ______.**
+    - undervoltage
+    - overvoltage
+    - reconnect
+    - transmission
+32. **A machine working below capacity is ______.**
+    - underloaded
+    - overloaded
+    - disconnected
+    - automated
+33. **A poorly performing system may ______.**
+    - underperform
+    - recharge
+    - discharge
+    - automate
+34. **Low current conditions may produce ______.**
+    - undercurrent
+    - overcurrent
+    - reconnect
+    - automate
+35. **If the motor receives insufficient voltage, it experiences ______.**
+    - undervoltage
+    - overvoltage
+    - transmission
+    - microvoltage
+36. **Insufficient load in a system is called ______.**
+    - underload
+    - overload
+    - reconnect
+    - automation
+37. **When a device performs poorly, it may ______.**
+    - underperform
+    - recharge
+    - reconnect
+    - microconnect
+38. **Low electrical supply is described as ______.**
+    - undervoltage
+    - overvoltage
+    - automation
+    - interconnection
+39. **Poor performance may result from ______ conditions.**
+    - underload
+    - overload
+    - transmission
+    - automation
+40. **A weak signal may indicate ______ power.**
+    - underpower
+    - overpower
+    - reconnect
+    - transmission
+41. **Communication between devices requires an ______.**
+    - interface
+    - recharge
+    - reconnect
+    - overload
+42. **Power systems require strong ______.**
+    - interconnections
+    - reconnections
+    - disconnections
+    - underconnections
+43. **Two systems connected together are ______.**
+    - interconnected
+    - disconnected
+    - underloaded
+    - overcharged
+44. **The communication point between two devices is called an ______.**
+    - interface
+    - overload
+    - capacitor
+    - resistor
+45. **Influence between components is called ______.**
+    - interaction
+    - automation
+    - transmission
+    - microprocessing
+46. **Systems capable of working together show ______.**
+    - interoperability
+    - underload
+    - overload
+    - reconnection
+47. **Cables allow systems to ______.**
+    - interconnect
+    - disconnect
+    - recharge
+    - rebuild
+48. **Data exchange between modules involves ______.**
+    - interaction
+    - disconnection
+    - overload
+    - underload
+49. **Large grids require electrical ______.**
+    - interconnections
+    - disconnections
+    - overloads
+    - automations
+50. **Devices communicate through digital ______.**
+    - interfaces
+    - disconnections
+    - microchips
+    - overloads
+51. **Systems that operate without human control are ______.**
+    - automatic
+    - manual
+    - underloaded
+    - disconnected
+52. **Industrial factories use ______ systems.**
+    - automation
+    - transmission
+    - discharge
+    - reconnection
+53. **A device that resets itself has ______ capability.**
+    - auto-reset
+    - microreset
+    - underreset
+    - interreset
+54. **Aircraft control systems sometimes use ______.**
+    - autopilot
+    - microcontrol
+    - overload
+    - reconnect
+55. **A regulator that adjusts itself works ______.**
+    - automatically
+    - manually
+    - disconnected
+    - underloaded
+56. **Robots in factories use ______ technology.**
+    - automation
+    - discharge
+    - reconnection
+    - underload
+57. **Systems that correct voltage automatically use ______ regulation.**
+    - automatic
+    - under
+    - inter
+    - dis
+58. **A thermostat may ______ temperature automatically.**
+    - auto-adjust
+    - microadjust
+    - underadjust
+    - overload
+59. **An electrical system that operates alone is ______.**
+    - automatic
+    - manual
+    - disconnected
+    - underloaded
+60. **Smart devices rely heavily on ______ control.**
+    - automatic
+    - manual
+    - under
+    - inter
+61. **A device that provides electrical energy is a ______.**
+    - power supply
+    - energy-saving
+    - high-voltage
+    - short-circuit
+62. **A switch that protects circuits is a ______.**
+    - circuit breaker
+    - power plant
+    - sensor network
+    - energy storage
+63. **A system used to generate electricity is a ______.**
+    - power plant
+    - high-voltage
+    - long-term
+    - wireless
+64. **A line carrying electricity over distance is a ______.**
+    - transmission line
+    - power supply
+    - energy storage
+    - sensor network
+65. **A device that records data is a ______.**
+    - data logger
+    - power grid
+    - circuit breaker
+    - motor driver
+66. **A network of connected sensors is a ______.**
+    - sensor network
+    - wireless
+    - high-voltage
+    - state-of-the-art
+67. **A device that controls motors is a ______.**
+    - motor driver
+    - circuit breaker
+    - power grid
+    - transmission line
+68. **A large system distributing electricity is a ______.**
+    - power grid
+    - battery pack
+    - power supply
+    - transmission line
+69. **Multiple batteries combined together form a ______.**
+    - battery pack
+    - power grid
+    - motor driver
+    - data logger
+70. **A system used for energy storage is called ______.**
+    - energy storage system
+    - power supply
+    - transmission line
+    - circuit breaker
+71. **Electricity transmitted at very high levels is ______ transmission.**
+    - high-voltage
+    - wireless
+    - real-time
+    - state-of-the-art
+72. **A processor that works very fast is ______.**
+    - high-speed
+    - low-noise
+    - long-term
+    - wireless
+73. **A system using little power is ______.**
+    - low-power
+    - high-voltage
+    - short-circuit
+    - real-time
+74. **A device with minimal electrical noise is ______.**
+    - low-noise
+    - high-power
+    - long-term
+    - real-time
+75. **A system designed to save energy is ______.**
+    - energy-efficient
+    - state-of-the-art
+    - short-circuit
+    - long-term
+76. **A modern advanced device is described as ______.**
+    - state-of-the-art
+    - low-power
+    - real-time
+    - high-speed
+77. **Processing that occurs instantly is called ______ processing.**
+    - real-time
+    - high-speed
+    - wireless
+    - long-term
+78. **A device storing large energy is ______.**
+    - high-capacity
+    - low-power
+    - wireless
+    - long-term
+79. **A communication system without cables is ______.**
+    - wireless
+    - high-speed
+    - real-time
+    - short-circuit
+80. **A durable solution lasting many years is ______.**
+    - long-term
+    - high-speed
+    - wireless
+    - short-circuit
+81. **A system that continues working despite faults is ______.**
+    - fault-tolerant
+    - high-speed
+    - wireless
+    - low-noise
+82. **Technology that is most advanced is ______.**
+    - state-of-the-art
+    - high-voltage
+    - low-noise
+    - real-time
+83. **A system that is easy to use is ______.**
+    - user-friendly
+    - high-speed
+    - wireless
+    - long-term
+84. **A device that works immediately after installation is ______.**
+    - plug-and-play
+    - high-voltage
+    - real-time
+    - low-noise
+85. **A system that reduces energy consumption is ______.**
+    - energy-saving
+    - short-circuit
+    - long-term
+    - wireless
+86. **A highly efficient machine is ______.**
+    - high-efficiency
+    - real-time
+    - wireless
+    - low-noise
+87. **An electrical fault where current bypasses resistance is ______.**
+    - short-circuit
+    - plug-and-play
+    - user-friendly
+    - state-of-the-art
+88. **A device designed to operate for many years is ______.**
+    - long-term
+    - high-voltage
+    - real-time
+    - wireless
+89. **A powerful system with excellent performance is ______.**
+    - high-performance
+    - low-noise
+    - wireless
+    - short-circuit
+90. **A low price product is ______.**
+    - low-cost
+    - high-voltage
+    - real-time
+    - wireless
+`;
+
+        // Parser and Initializer
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        function parseAndRender() {
+            const allQuestions = [];
+            const lines = rawData.split('\n');
+            let currentQ = null;
+            let currentSection = "";
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+
+                if (trimmed.startsWith('##')) {
+                    // Clean up section names for a cleaner display tag
+                    currentSection = trimmed.replace(/^##\s*/, '').replace(/\(Additional\)/gi, '').replace(/Section/gi, '').trim();
+                } else if (/^\d+\.\s*\*\*/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
+                    if (currentQ && currentQ.options.length > 0) allQuestions.push(currentQ);
+                    
+                    let qText = trimmed.replace(/^\d+\.\s*\**/, '').replace(/\**$/, '').trim();
+                    currentQ = {
+                        category: currentSection,
+                        question: qText,
+                        options: [],
+                        correctIndex: 0 
+                    };
+                } else if (trimmed.startsWith('-')) {
+                    if (currentQ) {
+                        currentQ.options.push(trimmed.replace(/^-/, '').trim());
+                    }
+                }
+            });
+            if (currentQ && currentQ.options.length > 0) allQuestions.push(currentQ);
+
+            // 1. Shuffle all pooled questions
+            shuffleArray(allQuestions);
+            
+            // 2. Select exactly 40 questions without duplication
+            const selectedQuestions = allQuestions.slice(0, 40);
+
+            selectedQuestions.forEach((item, index) => {
+                item.id = index;
+                
+                // The first option in the raw data is always the correct one
+                const correctText = item.options[0];
+                
+                // 3. Shuffle options for this specific question
+                shuffleArray(item.options);
+                
+                // Find new index of the correct answer after shuffling
+                item.correctIndex = item.options.indexOf(correctText);
+                
+                // Assign standard Letters A, B, C, D to the shuffled choices
+                item.optionsWithLetters = item.options.map((opt, i) => {
+                    return `${String.fromCharCode(65 + i)}. ${opt}`;
+                });
+            });
+
+            // Render HTML
+            const main = document.getElementById('quiz-main');
+            let html = '<h2 class="section-title">40-Question Random Challenge</h2>';
+
+            selectedQuestions.forEach(item => {
+                html += `
+                    <div class="card" id="q-${item.id}">
+                        <div style="font-size: 0.7em; font-weight: bold; color: var(--primary-dark); text-transform: uppercase; margin-bottom: 6px; opacity: 0.8;">
+                            [ ${item.category} ]
+                        </div>
+                        <h3 class="card-title">${item.id + 1}. ${item.question}</h3>
+                        <div class="options-container">
+                            ${item.optionsWithLetters.map((opt, oIdx) => `
+                                <button class="option-btn" onclick="checkAnswer(${item.id}, ${oIdx}, this, ${item.correctIndex})">
+                                    ${opt}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            main.innerHTML = html;
+        }
+
+        // Action Logic
+        function checkAnswer(qId, selectedIdx, btn, correctIdx) {
+            const card = document.getElementById(`q-${qId}`);
+            const buttons = card.querySelectorAll('.option-btn');
+
+            buttons.forEach((b, i) => {
+                b.disabled = true; // Disable all attempts (Single Attempt Rule)
+                if (i === correctIdx) {
+                    b.classList.add('correct');
+                } else if (i === selectedIdx) {
+                    b.classList.add('wrong');
+                }
+            });
+        }
+
+        // Initialize on load
+        window.onload = parseAndRender;
+
+    </script>
+</body>
+</html>
