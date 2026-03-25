@@ -343,12 +343,26 @@
     </div>
     <button class="ctrl-btn" id="toggle-btn" onclick="toggleHeader()">Hide Controls</button>
 
+    <!-- Student ID Input Modal -->
+    <div id="id-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2 style="margin-top: 0; color: var(--primary-dark); font-weight: 300; letter-spacing: 2px;">ENTER YOUR ID NUMBER</h2>
+            <p style="color: #555; font-size: 16px;">Please enter your number to view your results.</p>
+            <input type="number" id="student-id-input" placeholder="Enter ID (1 - 122)" style="padding: 12px; font-size: 20px; width: 80%; margin: 20px 0 10px 0; border: 2px solid var(--primary-dark); border-radius: 6px; text-align: center;" oninput="previewStudentName()">
+            <div id="student-name-preview" style="font-size: 20px; font-weight: bold; margin-bottom: 15px; min-height: 28px;"></div>
+            <div id="id-error" style="color: var(--wrong-color); display: none; margin-bottom: 15px; font-weight: bold;">Invalid ID. Please check your number and try again.</div>
+            <br>
+            <button id="id-submit-btn" class="modal-btn" onclick="processId()" style="background-color: var(--correct-color); padding: 12px 40px; opacity: 0.5; cursor: not-allowed;" disabled>Submit</button>
+            <button class="modal-btn" onclick="closeIdModal()" style="background-color: var(--wrong-color); padding: 12px 40px; margin-left: 10px;">Cancel</button>
+        </div>
+    </div>
+
     <!-- Score Message Modal -->
     <div id="score-modal" class="modal-overlay">
         <div class="modal-content">
             <h2 style="margin-top: 0; color: var(--primary-dark); font-weight: 300; letter-spacing: 2px;">QUIZ COMPLETED</h2>
             <div id="score-modal-text" style="font-size: 24px; margin: 20px 0;"></div>
-            <button class="modal-btn" onclick="closeScoreModal()">View Detailed Results</button>
+            <button class="modal-btn" onclick="closeScoreModal()" style="background-color: var(--correct-color);">View Detailed Results</button>
         </div>
     </div>
 
@@ -391,6 +405,158 @@
 
         // RAW DATA: All Extracted Questions
         const rawData = `
+## Chapter one: Introduction Section
+1. **What is the primary purpose of the Preamble?**
+   - To introduce the general field using a broad-to-narrow approach
+   - To define the specific boundaries and exclusions
+   - To present the final solution to the problem
+   - To list the specific, actionable steps
+2. **Which of the following represents the correct numbering for a subsection?**
+   - 1.1.1
+   - 1.A
+   - Section 1-1
+   - 1.1
+3. **What does the "funnel" approach in the introduction mean?**
+   - Moving from broad concepts to a narrow, specific topic
+   - Moving from narrow details to broad conclusions
+   - Listing all references in alphabetical order
+   - Presenting the solution before the problem
+4. **Which section is responsible for defining the core terms of the research?**
+   - Background
+   - Scope of the Study
+   - Preamble
+   - Organization of the Thesis
+5. **The "Motivation" section of Chapter One primarily explains:**
+   - The "Why" or urgent need for the study
+   - The overarching goal of the project
+   - The sequential roadmap of the chapters
+   - The exclusions and boundaries
+6. **What must you strictly avoid doing in the "Statement of the Problem"?**
+   - Presenting your proposed solution
+   - Identifying a technological flaw
+   - Pointing out an inefficiency
+   - Describing a specific gap
+7. **The Statement of the Problem focuses purely on:**
+   - The exact gap, flaw, or inefficiency in current technology
+   - The beneficiaries in the industry and academia
+   - The specific, actionable steps to achieve the goal
+   - A brief roadmap of each chapter
+8. **Research questions must be directly derived from the:**
+   - Problem statement
+   - Significance of the study
+   - Organization of the thesis
+   - Table of contents
+9. **How should the "Aim of the Study" be formatted?**
+   - As one overarching sentence stating the main goal
+   - As a detailed, multi-page paragraph
+   - As a bulleted list of daily tasks
+   - As a series of complex questions
+10. **Which of the following is a non-measurable, incorrect objective?**
+    - To understand the limitations of the system
+    - To analyze the limitations of standard encoders
+    - To simulate the system using software
+    - To evaluate and compare error rates
+11. **A proper SMART objective uses action verbs like:**
+    - To analyze, design, and evaluate
+    - To know, feel, and appreciate
+    - To believe, hope, and wish
+    - To ponder, guess, and understand
+12. **What is the primary function of the "Scope of the Study"?**
+    - To strictly define boundaries and list explicit exclusions
+    - To highlight the practical importance of the study
+    - To introduce the general field broadly
+    - To outline the theoretical principles of the topic
+13. **A common mistake when writing the Scope of the Study is:**
+    - Claiming the study covers everything without limits
+    - Explicitly stating what the study excludes
+    - Keeping the boundaries narrow and realistic
+    - Focusing only on a specific 4-bit simulation
+14. **The "Significance of the Study" should highlight:**
+    - The theoretical and practical beneficiaries of the research
+    - The fact that the thesis is required for a degree
+    - The step-by-step procedure of the experiment
+    - The general background history of the topic
+15. **Which of the following is a poor justification for a study's significance?**
+    - "This helps me get my degree."
+    - "It prevents catastrophic crashes in machinery."
+    - "It provides a validated simulation model."
+    - "It offers practical benefits for the industry."
+16. **The "Organization of the Thesis" serves as a:**
+    - Sequential roadmap summarizing the core function of each chapter
+    - Detailed list of all cited references
+    - Comprehensive glossary of technical terms
+    - Raw data repository for future analysis
+17. **When writing academic text, you should rigorously eliminate:**
+    - Personal pronouns like "I", "We", and "My"
+    - The passive voice
+    - Specific technical definitions
+    - Short, focused points
+18. **Which grammatical voice is highly recommended for academic reports?**
+    - Passive voice
+    - First-person active voice
+    - Second-person conversational voice
+    - Emotional poetic voice
+19. **Academic writing strictly forbids the use of:**
+    - Informal language, slang, and contractions
+    - Conciseness and clear structures
+    - Objective professional language
+    - Hierarchical numbering systems
+20. **Conciseness in academic writing means:**
+    - Presenting one clear idea per sentence without rambling
+    - Using the longest, most complex sentences possible
+    - Repeating the same point multiple times
+    - Avoiding the use of periods and commas
+21. **If a section is numbered "1.2", it represents a:**
+    - Main section inside a chapter
+    - Main chapter
+    - Subdivision of a subsection
+    - Page number
+22. **What does the "M" stand for in SMART Objectives?**
+    - Measurable
+    - Meaningful
+    - Mandatory
+    - Mechanical
+23. **A hierarchical numbering system is used in academic reports to:**
+    - Organize ideas clearly and logically
+    - Make the document look unnecessarily complex
+    - Replace the need for a table of contents
+    - Hide the main research objectives
+24. **In the provided example, why is "Grey code architecture" introduced?**
+    - To mathematically eliminate transition errors
+    - To increase the number of bit transitions
+    - To make the encoder operate slower
+    - To replace the need for an abstract
+25. **Research questions are defined as:**
+    - Specific, researchable inquiries
+    - Broad, unanswerable philosophical thoughts
+    - Statements of personal opinion
+    - Summaries of the author's background
+26. **Which section leads the reader from the general field to the specific topic?**
+    - The Preamble
+    - The Scope of the Study
+    - The Objectives
+    - The Organization of the Thesis
+27. **According to the guidelines, objectives must be actionable steps to achieve the:**
+    - Aim of the study
+    - Personal desires of the author
+    - Organization of the thesis
+    - Formatting rules
+28. **"Excluding the physical manufacturing of hardware components" is an example of:**
+    - Setting the scope and boundaries
+    - Formulating a research question
+    - Defining the significance of the study
+    - Writing the preamble
+29. **What is a common mistake regarding the numbering system?**
+    - Skipping numbers or using no numbering at all
+    - Following a strict 1.1, 1.2 hierarchy
+    - Numbering subsections as 1.1.1
+    - Starting the chapter with number 1
+30. **The overarching goal of the project is found in the:**
+    - Aim of the Study
+    - Background and Motivation
+    - Organization of the Thesis
+    - Significance of the Study
+
 ## Basic Concepts Section (Additional)
 1. **What is the main purpose of an abstract?**
    - To summarize the entire report briefly
@@ -2013,7 +2179,7 @@
             const cat = item.category.toLowerCase();
             const correctStr = `<em>${item.correctTextRaw}</em>`;
             
-            if (cat.includes("basic concepts") || cat.includes("technical writing")) {
+            if (cat.includes("basic concepts") || cat.includes("technical writing") || cat.includes("chapter one")) {
                 explanation = `<strong>Explanation:</strong> In technical reporting and writing, ${correctStr} is the standard professional practice.`;
             } else if (cat.includes("punctuation")) {
                 explanation = `<strong>Explanation:</strong> The rule applied here is ${correctStr} to ensure maximum clarity and proper sentence structure.`;
@@ -2034,8 +2200,115 @@
             feedbackDiv.className = "feedback show " + (isCorrect ? "correct-feedback" : "wrong-feedback");
         }
 
-        // Final Submission Logic
+        // Student Database Mapping
+        const studentData = {
+            1: "أفنان ممدوح توفيق عبدالوهاب عليبه", 2: "ابراهيم حسن محمد حسن عيد", 3: "ابراهيم محمد عبدالله راغب جمعة", 4: "احمد ابراهيم احمد خطاب",
+            5: "احمد السيد محمد محمود حجازى", 6: "احمد رضا بريك عماره", 7: "احمد سامح منصور عبدالعاطى حسن", 8: "احمد ساهر موسى عقل",
+            9: "احمد عبدالرازق مبروك محمود سيف الدين مدكور", 10: "احمد عوض عبدالسميع فرج الجهمى", 11: "احمد محمد احمد صابر عبدالحميد محمد",
+            12: "احمد محمد احمد يوسف خضر", 13: "احمد محمد اسماعيل عبدالحافظ القط", 14: "احمد محمد خميس محمود عوض", 15: "احمد محمد عبدالفتاح يوسف غزى",
+            16: "احمد محمد محمد طه سرحان", 17: "احمد محمد محمد عبدالمنعم القط", 18: "احمد محمد موسى حسين موسى", 19: "احمد مصطفى محمد النعناعى",
+            20: "احمد يسري محمد مصطفي علوان", 21: "ادهم على محمد على السيد", 22: "اسامه السعيد محمود احمد القاضى", 23: "اسراء فاروق جلال عوض غازى خطاب",
+            24: "اسماء احمد علام ابراهيم سالم الديب", 25: "براء عبدالله محمد رشدى المعداوى", 26: "حبيبة عبدالعال محمد احمد غلوش",
+            27: "حسام السيد حسين كامل احمد", 28: "حنين صلاح لبيب موسى الصفطاوى", 29: "حنين عبدالمنعم عبدالسلام محمد الروينى",
+            30: "رجب مبروك بسيونى محمود عيسي اغا", 31: "زياد احمد ابراهيم عبدالحميد اسماعيل", 32: "سارة محمد يوسف عبدالواحد سلامه",
+            33: "ساره احمد مصطفى ابوالفتوح ابوحمر", 34: "ساره رضا ابراهيم عبدالدايم الاسرج", 35: "سامح يحي سيد احمد عبدالحميد سيد احمد",
+            36: "سعد نصر سعد على السعدنى", 37: "سعيدة رمضان امين عبداللطيف غنيم", 38: "سمير عماد امين محمد ابوليمون", 39: "شهد ابراهيم ابراهيم جبر زيد",
+            40: "شيماء محمود محمد سليمان عبدالنبي", 41: "عبدالرحمن باسل احمد احمد الصنفاوى", 42: "عبدالرحمن عرفات بدراوي راغب حنيش",
+            43: "عبدالرحمن وائل السيد جبر", 44: "عبدالله محمد فاروق عبد السلام البنا", 45: "عبدالله مختار عبدالله عبدالعزيز رزق",
+            46: "عبدالله مصطفى نبوى عدس الدوبى", 47: "عبدالله مهدى حسن محمد عشوش", 48: "عبدالمنعم الدسوقى عبدالمنعم ابراهيم العربجى",
+            49: "عبدالوهاب جمال عبدالوهاب عبدالفتاح", 50: "عمر ابراهيم فهمي عباس عبدالجواد", 51: "عمر عماد فكرى ابراهيم الهجين",
+            52: "عمر فرج محمد فرج الديب", 53: "عمر نبيل بدير سليم عيسى", 54: "عمرو خالد محمد محمد عبدالرحمن", 55: "كنزى راضي فتحى راضي حامد",
+            56: "مالك خالد سعد ابراهيم", 57: "محمد اسماعيل محمود عبدالجليل عيسى", 58: "محمد السيد محمد السيد السقا", 59: "محمد الشوادفى عبدالمنعم غازى",
+            60: "محمد جمال جمعه ابراهيم سويلم", 61: "محمد حمادة زيدان عطية السيد عبدالرحيم", 62: "محمد خيرى بهجت محمد خلف الله",
+            63: "محمد رضا محمد سيد احمد لهلوبه", 64: "محمد رمضان رزق فتوح حجازى", 65: "محمد سمير محمد خليل حجاج", 66: "محمد شفيق محمد عبدالمنعم صقر",
+            67: "محمد صالح عبدالعزيز حسن الدمراوى", 68: "محمد صبحى سعيد ابراهيم عطيان", 69: "محمد صبرى محمد ابراهيم بدر",
+            70: "محمد طلعت عبدالنبى عبدالجواد ناجى", 71: "محمد عادل محمد شلبى ابراهيم", 72: "محمد عبدالرازق عيد محمد ابراهيم",
+            73: "محمد عبدالفتاح صبرى عبدالفتاح قنديل", 74: "محمد عبدالمولى محمد شحاته", 75: "محمد عصام احمد السيد هلال",
+            76: "محمد مصطفى فكرى حسن محمد حمود", 77: "محمد ممدوح نبيل ممدوح", 78: "محمود ابراهيم محمد السباعى يونس", 79: "محمود شعبان عبيد الزعويلى",
+            80: "محمود كامل محمد حسب الله موسى", 81: "معتز سعيد ابراهيم ابراهيم السنكرى", 82: "منة الله محمد ابوالفتوح شرف عامر",
+            83: "مهند عمر عبدالحميد محمد ابوهلال", 84: "ميسون محمد حجاج محمد البرى", 85: "نبيه السيد نبيه ابراهيم محمد", 86: "ندى ياسر دردير معتوق",
+            87: "هبه ابوالعز محفوظ ابوالعز محمد", 88: "هدرا سامح صالح زكى صالح", 89: "هنا هشام احمد محمد الشابورى", 90: "يارا ياسر موسى عبدالفتاح غنيم",
+            91: "يوسف اشرف رجب محمد عبدالسلام", 92: "يوسف عصام احمد محمد ناصر", 93: "يوسف محمد سعد محمد ناجى", 94: "يوسف هانى محمد حافظ صالح",
+            95: "اسلام على على سالم الجمل", 96: "السيد ايمن ابوزيد سحلوب", 97: "حبيبة كمال عبدالخالق السيد الوكيل", 98: "حسام ايمن عقل احمد محمد",
+            99: "زياد نصر سمير محمد احمد الضلعى", 100: "سيف محمد فتح الله فتح الله المكاوى", 101: "عمر محمد عبدالنبى مبروك قنبر",
+            102: "عمر منتصر عبدالفتاح محمد مصباح", 103: "عمرو محمد سعيد عبدالعاطى ناصف", 104: "مجدى عبدالسلام عبدالعزيز محمد السيسى",
+            105: "محمد حلمى محمد عبدالسلام الديب", 106: "محمد خالد عاطف محمود زياده", 107: "محمد رضا عبدالمنعم العبد", 108: "محمد عبدالرازق فكرى عوض",
+            109: "مصطفى خالد مصطفى محمد سمك", 110: "يوسف ابراهيم على السيد ناصف", 111: "احمد خيرى على الزنقلى", 112: "احمد فتحى فتحى غنومه",
+            113: "جمال عبدالناصر متولى محمد متولى", 114: "عبدالفتاح على عبدالفتاح على نوار", 115: "عبدالفتاح محمد على جادالله",
+            116: "على عبدالله محمود موسى القاضى", 117: "مؤمن مصطفى بكر خضر", 118: "محمد خالد حمود فوده", 119: "محمد علاء عبدالمجيد فرج الحليسى",
+            120: "محمود حمدى محمد احمد محمود القونى", 121: "محمود مجدى عطيه الديب", 122: "مصطفى محمد احمد ابراهيم نعناعه"
+        };
+
+        // First step of submission: Trigger ID Input Modal
         function submitQuiz() {
+            document.getElementById('id-modal').style.display = 'flex';
+            
+            // Reset modal states
+            const inputField = document.getElementById('student-id-input');
+            inputField.value = '';
+            inputField.focus();
+            
+            document.getElementById('id-error').style.display = 'none';
+            document.getElementById('student-name-preview').textContent = '';
+            
+            const submitBtn = document.getElementById('id-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+        }
+
+        function closeIdModal() {
+            document.getElementById('id-modal').style.display = 'none';
+        }
+
+        // Real-time Name Preview Logic
+        function previewStudentName() {
+            const idValue = document.getElementById('student-id-input').value;
+            const previewDiv = document.getElementById('student-name-preview');
+            const errorDiv = document.getElementById('id-error');
+            const submitBtn = document.getElementById('id-submit-btn');
+
+            if (!idValue) {
+                previewDiv.textContent = '';
+                errorDiv.style.display = 'none';
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+                return;
+            }
+
+            const studentName = studentData[idValue];
+            if (studentName) {
+                previewDiv.textContent = "👤 " + studentName;
+                previewDiv.style.color = 'var(--correct-color)';
+                errorDiv.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            } else {
+                previewDiv.textContent = "⚠️ ID Not Found";
+                previewDiv.style.color = 'var(--wrong-color)';
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+            }
+        }
+
+        // Process ID and Validate
+        function processId() {
+            const idValue = document.getElementById('student-id-input').value;
+            const studentName = studentData[idValue];
+
+            if (studentName) {
+                document.getElementById('id-modal').style.display = 'none';
+                finalizeQuiz(studentName);
+            } else {
+                document.getElementById('id-error').style.display = 'block';
+            }
+        }
+
+        // Final Submission Logic (Calculates Score and Shows Results)
+        function finalizeQuiz(studentName) {
             // Disable all remaining unanswered buttons
             const allButtons = document.querySelectorAll('.option-btn:not(:disabled)');
             allButtons.forEach(b => b.disabled = true);
@@ -2067,11 +2340,12 @@
                 emoji = "📚";
             }
 
-            // Show Custom Modal Message with Score
+            // Show Custom Modal Message with Student Name and Score
             const modal = document.getElementById('score-modal');
             const modalText = document.getElementById('score-modal-text');
             modalText.innerHTML = `
                 <span style="font-size: 3em; display: block; margin-bottom: 10px;">${emoji}</span>
+                <strong style="color: #111; font-size: 1.2em; display: block; margin-bottom: 10px; font-family: 'Arial', sans-serif;">${studentName}</strong>
                 You scored<br>
                 <strong style="font-size: 2.2em; color: var(--primary-dark); display: block; margin-top: 10px;">${score} / ${total}</strong>
                 <div style="font-size: 0.8em; margin-top: 15px; color: #555;">${message}</div>
@@ -2087,6 +2361,7 @@
             
             resultsDiv.innerHTML = `
                 <div style="font-size: 2em; margin-bottom: 10px;">${emoji}</div>
+                <div style="color: #333; font-size: 0.8em; margin-bottom: 15px; font-family: 'Arial', sans-serif;">${studentName}</div>
                 <div>Your Final Score: ${score} / ${total}</div>
                 <div style="font-size: 0.7em; color: #555; margin-top: 12px;">${percentage}% &mdash; ${message}</div>
                 <button class="ctrl-btn" style="margin-top: 25px; background-color: var(--primary-dark); color: white; padding: 12px 24px; font-size: 18px;" onclick="location.reload()">Take a New Random Quiz</button>
