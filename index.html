@@ -222,9 +222,89 @@
             color: #7f1d1d;
         }
 
+        /* Submit Button and Results */
+        .submit-btn {
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 30px auto;
+            padding: 16px 20px;
+            background-color: var(--correct-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 22px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .submit-btn:hover {
+            transform: scale(1.05);
+            background-color: #15803d; /* slightly darker green */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .results-container {
+            text-align: center;
+            background: var(--card-bg);
+            border: 3px solid var(--primary-dark);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px auto 40px auto;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-dark);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            max-width: 90%;
+            border: 4px solid var(--primary-dark);
+        }
+
+        .modal-btn {
+            margin-top: 25px;
+            padding: 12px 30px;
+            background-color: var(--correct-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+            background-color: #15803d;
         }
 
         /* Footer */
@@ -262,6 +342,15 @@
         </div>
     </div>
     <button class="ctrl-btn" id="toggle-btn" onclick="toggleHeader()">Hide Controls</button>
+
+    <!-- Score Message Modal -->
+    <div id="score-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="margin-top: 0; color: var(--primary-dark); font-weight: 300; letter-spacing: 2px;">QUIZ COMPLETED</h2>
+            <div id="score-modal-text" style="font-size: 24px; margin: 20px 0;"></div>
+            <button class="modal-btn" onclick="closeScoreModal()">View Detailed Results</button>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main id="quiz-main">
@@ -1775,6 +1864,7 @@
 
         // Store selected questions globally for the feedback logic
         let currentQuizData = [];
+        let userAnswers = {};
 
         // Parser and Initializer
         function shuffleArray(array) {
@@ -1845,6 +1935,7 @@
             
             // 2. Select exactly 40 questions without duplication
             currentQuizData = allQuestions.slice(0, 40);
+            userAnswers = {}; // Reset user answers on load
 
             currentQuizData.forEach((item, index) => {
                 item.id = index;
@@ -1886,6 +1977,13 @@
                     </div>
                 `;
             });
+
+            // Append the Submit Button and Results Container
+            html += `
+                <button id="submit-btn" class="submit-btn" onclick="submitQuiz()">Submit Your Answers</button>
+                <div id="quiz-results" class="results-container" style="display: none;"></div>
+            `;
+
             main.innerHTML = html;
         }
 
@@ -1897,6 +1995,9 @@
             const feedbackDiv = document.getElementById(`feedback-${qId}`);
 
             const isCorrect = (selectedIdx === item.correctIndex);
+            
+            // Record the user's answer
+            userAnswers[qId] = isCorrect;
 
             buttons.forEach((b, i) => {
                 b.disabled = true; // Disable all attempts (Single Attempt Rule)
@@ -1931,6 +2032,74 @@
             // Display the feedback
             feedbackDiv.innerHTML = (isCorrect ? "<strong>✅ Correct!</strong><br>" : "<strong>❌ Incorrect.</strong><br>") + explanation;
             feedbackDiv.className = "feedback show " + (isCorrect ? "correct-feedback" : "wrong-feedback");
+        }
+
+        // Final Submission Logic
+        function submitQuiz() {
+            // Disable all remaining unanswered buttons
+            const allButtons = document.querySelectorAll('.option-btn:not(:disabled)');
+            allButtons.forEach(b => b.disabled = true);
+
+            // Calculate score
+            let score = 0;
+            for (let key in userAnswers) {
+                if (userAnswers[key]) score++;
+            }
+            
+            const total = currentQuizData.length;
+            const percentage = Math.round((score / total) * 100);
+
+            // Generate dynamic message and emoji based on percentage
+            let message = "";
+            let emoji = "";
+
+            if (percentage >= 90) {
+                message = "Outstanding! Excellent work!";
+                emoji = "🏆";
+            } else if (percentage >= 75) {
+                message = "Great job! Well done!";
+                emoji = "🌟";
+            } else if (percentage >= 50) {
+                message = "Good effort! You passed, but keep practicing.";
+                emoji = "👍";
+            } else {
+                message = "Keep learning! Review the feedback and try again.";
+                emoji = "📚";
+            }
+
+            // Show Custom Modal Message with Score
+            const modal = document.getElementById('score-modal');
+            const modalText = document.getElementById('score-modal-text');
+            modalText.innerHTML = `
+                <span style="font-size: 3em; display: block; margin-bottom: 10px;">${emoji}</span>
+                You scored<br>
+                <strong style="font-size: 2.2em; color: var(--primary-dark); display: block; margin-top: 10px;">${score} / ${total}</strong>
+                <div style="font-size: 0.8em; margin-top: 15px; color: #555;">${message}</div>
+            `;
+            modal.style.display = 'flex';
+
+            // Hide submit button, show results
+            const btn = document.getElementById('submit-btn');
+            btn.style.display = 'none';
+
+            const resultsDiv = document.getElementById('quiz-results');
+            resultsDiv.style.display = 'block';
+            
+            resultsDiv.innerHTML = `
+                <div style="font-size: 2em; margin-bottom: 10px;">${emoji}</div>
+                <div>Your Final Score: ${score} / ${total}</div>
+                <div style="font-size: 0.7em; color: #555; margin-top: 12px;">${percentage}% &mdash; ${message}</div>
+                <button class="ctrl-btn" style="margin-top: 25px; background-color: var(--primary-dark); color: white; padding: 12px 24px; font-size: 18px;" onclick="location.reload()">Take a New Random Quiz</button>
+            `;
+        }
+
+        function closeScoreModal() {
+            // Hide the modal overlay
+            document.getElementById('score-modal').style.display = 'none';
+            
+            // Smoothly scroll down to the detailed results
+            const resultsDiv = document.getElementById('quiz-results');
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         // Initialize on load
